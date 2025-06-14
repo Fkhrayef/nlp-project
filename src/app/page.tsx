@@ -1,17 +1,17 @@
 "use client";
 
 import { Header } from "@/components/header";
-import { Container } from "@/components/container";
 import { Content } from "@/components/content";
 
 export default function Home() {
   return (
-    <main className="container mx-auto px-4 py-8 max-w-6xl">
-      <Header />
-      <div className="flex justify-center items-center">
-        <Container>
+    <main>
+      <div className="flex flex-col max-w-[1200px] mx-auto px-4 min-h-screen">
+        <Header />
+
+        <div className="flex-1">
           <Content />
-        </Container>
+        </div>
       </div>
     </main>
   );

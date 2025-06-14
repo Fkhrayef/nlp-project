@@ -1,45 +1,13 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+import { FileText, Brain, Copy } from "lucide-react";
 import { formatPercentage } from "@/lib/utils";
 import { CLASSIFICATION_LABELS } from "@/lib/constants";
-
-type PreprocessingSteps = {
-  original_text: string;
-  step_1_remove_diacritics?: string;
-  step_2_remove_punctuation?: string;
-  step_3_normalize_text?: string;
-  step_4_remove_stopwords?: string;
-  step_5_stem_words?: string;
-  final_result: string;
-  preprocessing_summary?: {
-    original_length: number;
-    final_length: number;
-    reduction_percentage: number;
-    words_removed: number;
-    words_remaining: number;
-  };
-};
-
-type ClassificationResponse = {
-  text: string;
-  predicted_class: string;
-  confidence: number;
-  probabilities?: Record<string, number>;
-  preprocessing_steps: PreprocessingSteps;
-  model_used: string;
-};
-
-type SummarizationResponse = {
-  original_text: string;
-  summary: string;
-  num_sentences_requested: number;
-  actual_summary_sentences: number;
-  compression_ratio: number;
-  preprocessing_steps: PreprocessingSteps;
-  model_used: string;
-};
+import { ClassificationResponse, SummarizationResponse } from "@/lib/types";
+import { ProbabilityChart } from "@/components/ui/probability-chart";
+import { InfoBlock } from "@/components/info-block";
+import { Badge } from "@/components/ui/badge";
 
 type TechniqueCardProps = {
   label: string;
@@ -48,106 +16,136 @@ type TechniqueCardProps = {
 };
 
 export const TechniqueCard = ({ label, result, task }: TechniqueCardProps) => {
-  const renderClassificationResult = (data: ClassificationResponse) => (
-    <div className="space-y-4">
-      <div className="text-center">
-        <h4 className="text-lg font-semibold text-right mb-2">نتيجة التصنيف</h4>
-        <div className="inline-flex items-center gap-2">
-          <Badge variant="secondary" className="text-base px-4 py-2">
-            {CLASSIFICATION_LABELS[data.predicted_class as keyof typeof CLASSIFICATION_LABELS] ||
-              data.predicted_class}
-          </Badge>
-          <span className="text-sm text-muted-foreground">
-            ({formatPercentage(data.confidence * 100)})
-          </span>
-        </div>
-      </div>
+  const [copySuccess, setCopySuccess] = useState(false);
 
-      {data.probabilities && Object.keys(data.probabilities).length > 0 && (
-        <div className="space-y-2">
-          <h5 className="font-medium text-right">توزيع الاحتمالات:</h5>
-          <div className="space-y-1">
-            {Object.entries(data.probabilities)
-              .sort(([, a], [, b]) => b - a)
-              .map(([category, probability]) => (
-                <div key={category} className="flex justify-between items-center">
-                  <div className="flex-1 bg-gray-200 rounded-full h-2 ml-3">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full"
-                      style={{ width: `${probability * 100}%` }}
-                    />
-                  </div>
-                  <span className="text-sm w-20 text-right">
-                    {formatPercentage(probability * 100)}
-                  </span>
-                  <span className="text-sm w-16 text-right">
-                    {CLASSIFICATION_LABELS[category as keyof typeof CLASSIFICATION_LABELS] ||
-                      category}
-                  </span>
-                </div>
-              ))}
+  const copyToClipboard = (textToCopy: string) => {
+    navigator.clipboard.writeText(textToCopy);
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 2000);
+  };
+
+  const renderClassificationResult = (data: ClassificationResponse) => {
+    // Transform probability data for chart
+    const categories = data.probability_distribution
+      ? Object.keys(data.probability_distribution).sort(
+          (a, b) => data.probability_distribution![b] - data.probability_distribution![a]
+        )
+      : [];
+
+    const chartData = categories.map((category) => ({
+      category: CLASSIFICATION_LABELS[category as keyof typeof CLASSIFICATION_LABELS] || category,
+      probability: data.probability_distribution![category] * 100,
+    }));
+
+    return (
+      <div className="space-y-4 md:space-y-6">
+        <div className="text-center">
+          <h4 className="text-base md:text-lg font-semibold text-right mb-2">نتيجة التصنيف</h4>
+          <div className="inline-flex items-center gap-2">
+            <Badge variant="secondary" className="px-4 py-2 text-base md:text-sm font-semibold">
+              {CLASSIFICATION_LABELS[data.prediction as keyof typeof CLASSIFICATION_LABELS] ||
+                data.prediction}
+            </Badge>
+            <span className="text-xs md:text-sm text-gray-600">
+              ({formatPercentage(data.confidence * 100)})
+            </span>
           </div>
         </div>
-      )}
 
-      <div className="text-sm text-muted-foreground text-right">
-        <p>
-          <strong>النموذج المستخدم:</strong> {data.model_used}
-        </p>
-        <p>
-          <strong>النص:</strong> {data.text}
-        </p>
+        {data.probability_distribution && Object.keys(data.probability_distribution).length > 0 && (
+          <div className="space-y-3 md:space-y-4">
+            <h5 className="font-medium text-right text-sm md:text-base">توزيع الاحتمالات:</h5>
+            <ProbabilityChart data={chartData} />
+          </div>
+        )}
+
+        <div className="text-xs md:text-sm text-gray-600 text-right">
+          <p>
+            <strong>النموذج المستخدم:</strong> {data.model_used}
+          </p>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderSummarizationResult = (data: SummarizationResponse) => (
-    <div className="space-y-4">
-      <div>
-        <h4 className="text-lg font-semibold text-right mb-2">الملخص</h4>
-        <p className="text-right bg-blue-50 p-4 rounded border-r-4 border-blue-500" dir="rtl">
+    <div className="space-y-4 md:space-y-6">
+      <InfoBlock title="الملخص" icon={<FileText className="w-5 h-5 md:w-6 md:h-6" />}>
+        <p dir="rtl" className="text-foreground text-right leading-relaxed text-base md:text-lg">
           {data.summary}
         </p>
-      </div>
+      </InfoBlock>
 
-      <div className="grid grid-cols-2 gap-4 text-center">
-        <div>
-          <Badge variant="outline">عدد الجمل المطلوبة: {data.num_sentences_requested}</Badge>
+      <div className="flex gap-3 md:gap-4">
+        <div className="text-center p-3 md:p-4 bg-primary/5 rounded-xl border border-border flex-1">
+          <div className="text-xl md:text-2xl font-bold text-primary">
+            {data.summary_sentence_count}
+          </div>
+          <div className="text-xs md:text-sm text-primary/80">جمل الملخص</div>
         </div>
-        <div>
-          <Badge variant="outline">جمل الملخص الفعلية: {data.actual_summary_sentences}</Badge>
+        <div className="text-center p-3 md:p-4 bg-primary/5 rounded-xl border border-border flex-1">
+          <div className="text-xl md:text-2xl font-bold text-primary">
+            {data.original_sentence_count}
+          </div>
+          <div className="text-xs md:text-sm text-primary/80">الجمل الأصلية</div>
         </div>
-      </div>
-
-      <div className="text-center">
-        <Badge variant="secondary">
-          نسبة الضغط: {formatPercentage(data.compression_ratio * 100)}
-        </Badge>
-      </div>
-
-      <div className="text-sm text-muted-foreground text-right">
-        <p>
-          <strong>النموذج المستخدم:</strong> {data.model_used}
-        </p>
       </div>
     </div>
   );
 
-  const renderResult = () => {
+  const getResultText = () => {
     if (task === "classification") {
-      return renderClassificationResult(result as ClassificationResponse);
+      const data = result as ClassificationResponse;
+      return (
+        CLASSIFICATION_LABELS[data.prediction as keyof typeof CLASSIFICATION_LABELS] ||
+        data.prediction
+      );
     } else if (task === "summarization") {
-      return renderSummarizationResult(result as SummarizationResponse);
+      const data = result as SummarizationResponse;
+      return data.summary;
     }
-    return <p className="text-center text-muted-foreground">نوع مهمة غير مدعوم</p>;
+    return "";
+  };
+
+  const getModelName = () => {
+    if ("model_used" in result) {
+      return result.model_used;
+    }
+    return label === "نتائج النموذج الأول" ? "النموذج التقليدي" : "النموذج الحديث";
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-right">{label}</CardTitle>
-      </CardHeader>
-      <CardContent>{renderResult()}</CardContent>
-    </Card>
+    <div className="bg-card rounded-2xl shadow-lg p-4 md:p-8 border border-border">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-0 mb-4 md:mb-6">
+        <div className="flex items-center justify-center md:justify-start">
+          <div className="bg-primary/10 p-3 rounded-xl ml-4">
+            {task === "summarization" ? (
+              <FileText className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+            ) : (
+              <Brain className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+            )}
+          </div>
+          <div className="text-center md:text-right">
+            <h4 className="text-lg md:text-xl font-bold text-foreground">{label}</h4>
+            <p className="text-sm text-muted-foreground mt-1">{getModelName()}</p>
+          </div>
+        </div>
+        <button
+          onClick={() => copyToClipboard(getResultText())}
+          className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 w-full md:w-auto ${
+            copySuccess
+              ? "bg-primary/10 text-primary"
+              : "bg-muted hover:bg-primary/5 text-foreground hover:text-primary"
+          }`}
+        >
+          <Copy className="w-4 h-4" />
+          <span className="font-medium">{copySuccess ? "تم النسخ!" : "نسخ"}</span>
+        </button>
+      </div>
+
+      {task === "classification"
+        ? renderClassificationResult(result as ClassificationResponse)
+        : renderSummarizationResult(result as SummarizationResponse)}
+    </div>
   );
 };

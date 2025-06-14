@@ -5,7 +5,6 @@ import "./globals.css";
 const tajawal = Tajawal({
   subsets: ["arabic"],
   weight: ["300", "400", "500", "700"],
-  variable: "--font-tajawal",
 });
 
 export const metadata: Metadata = {
@@ -20,7 +19,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl">
-      <body className={`${tajawal.variable} font-sans antialiased`}>{children}</body>
+      <body className={`${tajawal.className} text-sm text-foreground bg-background min-h-screen`}>
+        {children}
+      </body>
     </html>
   );
 }

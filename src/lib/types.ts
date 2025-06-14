@@ -25,35 +25,44 @@ export type PreprocessingSteps = {
 };
 
 export type PreprocessingResponse = {
-  original_text: string;
   task_type: string;
-  preprocessing_steps: PreprocessingSteps;
-  processed_text: string;
+  preprocessing_steps: {
+    original: string;
+    stripped_lowered: string;
+    normalized: string;
+    diacritics_removed: string;
+    punctuation_removed: string;
+    repeated_chars_reduced: string;
+    whitespace_normalized: string;
+    numbers_removed: string;
+    tokenized: string[];
+    stopwords_removed: string[];
+    stemmed: string[];
+    final: string;
+  };
 };
 
 // Classification specific types
 export type ClassificationResponse = {
-  text: string;
-  predicted_class: string;
+  prediction: string;
   confidence: number;
-  probabilities?: Record<string, number>;
-  preprocessing_steps: PreprocessingSteps;
+  probability_distribution: Record<string, number>;
+  cleaned_text: string;
   model_used: string;
 };
 
 // Summarization specific types
 export type SummarizationResponse = {
-  original_text: string;
   summary: string;
-  num_sentences_requested: number;
-  actual_summary_sentences: number;
-  compression_ratio: number;
-  preprocessing_steps: PreprocessingSteps;
-  model_used: string;
+  original_sentence_count: number;
+  summary_sentence_count: number;
+  sentences: string[];
+  selected_indices: number[];
+  sentence_scores: number[];
 };
 
 // Generic response wrapper
-export type DualTechniqueResponse<T> = {
-  traditional: T;
-  modern: T;
+export type DualResults = {
+  traditional: ClassificationResponse | SummarizationResponse;
+  modern: ClassificationResponse | SummarizationResponse;
 };

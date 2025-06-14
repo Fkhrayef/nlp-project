@@ -1,108 +1,123 @@
 "use server";
 
-import { ServerFormSchema } from "@/lib/validations";
+import { ServerFormSchema, ServerFormData } from "@/lib/validations";
 import { API_BASE_URL, ENDPOINTS } from "@/lib/constants";
 import type {
   ClassificationResponse,
   SummarizationResponse,
   PreprocessingResponse,
-  DualTechniqueResponse,
+  DualResults,
 } from "@/lib/types";
 
-// Types used only in this file
-type TextInput = {
+// Request payload types
+type ClassificationPayload = {
   text: string;
+  model: string;
 };
 
-type TextInputWithSentences = {
+type SummarizationPayload = {
   text: string;
   num_sentences: number;
+  model: string;
 };
 
-type PreprocessingInput = {
+type PreprocessingPayload = {
   text: string;
   task_type: string;
 };
 
-// Combined response type for the new flow
+// Combined result type
 export type AnalysisResult = {
   preprocessing: PreprocessingResponse;
-  results: DualTechniqueResponse<ClassificationResponse | SummarizationResponse>;
+  results: DualResults;
   task: string;
 };
 
-// Helper function to call traditional endpoint
-const callTraditionalEndpoint = async (
-  endpoint: string,
-  payload: TextInput | TextInputWithSentences
-): Promise<ClassificationResponse | SummarizationResponse> => {
-  const url = `${API_BASE_URL}${endpoint}`;
+// Helper function to call classification endpoint
+async function callClassificationEndpoint(
+  text: string,
+  model: string
+): Promise<ClassificationResponse> {
+  const url = `${API_BASE_URL}${ENDPOINTS.classification}`;
+  const payload: ClassificationPayload = { text, model };
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-  if (!response.ok) {
-    throw new Error(`Traditional API error: ${response.statusText}`);
+    if (!response.ok) {
+      throw new Error(`API error: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error calling classification endpoint:", error);
+    throw error;
   }
+}
 
-  return response.json() as Promise<ClassificationResponse | SummarizationResponse>;
-};
+// Helper function to call summarization endpoint
+async function callSummarizationEndpoint(
+  text: string,
+  numSentences: number,
+  model: string
+): Promise<SummarizationResponse> {
+  const url = `${API_BASE_URL}${ENDPOINTS.summarization}`;
+  const payload: SummarizationPayload = {
+    text,
+    num_sentences: numSentences,
+    model,
+  };
 
-// Helper function to call modern endpoint (future implementation)
-const callModernEndpoint = async (
-  endpoint: string,
-  payload: TextInput | TextInputWithSentences
-): Promise<ClassificationResponse | SummarizationResponse> => {
-  // For now, we'll call the same endpoint and mock a different response
-  // In the future, this will call endpoint with ?technique=modern parameter
-  const url = `${API_BASE_URL}${endpoint}`;
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+    if (!response.ok) {
+      throw new Error(`API error: ${response.statusText}`);
+    }
 
-  if (!response.ok) {
-    throw new Error(`Modern API error: ${response.statusText}`);
+    return await response.json();
+  } catch (error) {
+    console.error("Error calling summarization endpoint:", error);
+    throw error;
   }
-
-  const data = (await response.json()) as ClassificationResponse | SummarizationResponse;
-
-  // Mock some differences for modern technique (temporary)
-  if ("confidence" in data && data.confidence !== undefined) {
-    data.confidence = Math.min(0.99, data.confidence + 0.05);
-  }
-  if ("model_used" in data && data.model_used) {
-    data.model_used = "modern_" + data.model_used;
-  }
-
-  return data;
-};
+}
 
 // Helper function to call preprocessing endpoint
-const callPreprocessingEndpoint = async (text: string): Promise<PreprocessingResponse> => {
+async function callPreprocessingEndpoint(
+  text: string,
+  task: string
+): Promise<PreprocessingResponse> {
   const url = `${API_BASE_URL}${ENDPOINTS.preprocess}`;
-  const payload: PreprocessingInput = { text, task_type: "classification" };
+  const payload: PreprocessingPayload = { text, task_type: task };
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-  if (!response.ok) {
-    throw new Error(`Preprocessing API error: ${response.statusText}`);
+    if (!response.ok) {
+      throw new Error(`API error: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error calling preprocessing endpoint:", error);
+    throw error;
   }
-
-  return response.json() as Promise<PreprocessingResponse>;
-};
+}
 
 // Main server action for handling form submissions
-export const handleSubmit = async (formData: FormData): Promise<AnalysisResult> => {
+export async function handleSubmit(formData: FormData): Promise<AnalysisResult> {
   const rawData = {
     text: formData.get("text")?.toString() || "",
     task: formData.get("task")?.toString() || "",
@@ -114,31 +129,27 @@ export const handleSubmit = async (formData: FormData): Promise<AnalysisResult> 
     throw new Error(parsed.error.issues[0].message);
   }
 
-  const { text, task, numSentences } = parsed.data;
-  const endpoint = ENDPOINTS[task as keyof typeof ENDPOINTS];
-
-  if (!endpoint) {
-    throw new Error("مهمة غير صحيحة");
-  }
-
-  // Prepare payload based on task type
-  let payload: TextInput | TextInputWithSentences;
-
-  if (task === "summarization") {
-    payload = { text, num_sentences: numSentences || 3 };
-  } else {
-    payload = { text };
-  }
+  const { text, task, numSentences } = parsed.data as ServerFormData;
 
   try {
-    // Step 1: Call preprocessing once
-    const preprocessing = await callPreprocessingEndpoint(text);
+    // Step 1: Call preprocessing
+    const preprocessing = await callPreprocessingEndpoint(text, task);
 
-    // Step 2: Call the actual task endpoints in parallel
-    const [traditional, modern] = await Promise.all([
-      callTraditionalEndpoint(endpoint, payload),
-      callModernEndpoint(endpoint, payload),
-    ]);
+    // Step 2: Call task-specific endpoints with different models
+    let traditional, modern;
+
+    if (task === "classification") {
+      traditional = await callClassificationEndpoint(text, "traditional_svm");
+      modern = await callClassificationEndpoint(text, "modern_lstm");
+    } else if (task === "summarization") {
+      // Use numSentences (which is already a number from the schema) or default to 3
+      const sentenceCount = numSentences || 3;
+
+      traditional = await callSummarizationEndpoint(text, sentenceCount, "traditional_svm");
+      modern = await callSummarizationEndpoint(text, sentenceCount, "modern_lstm");
+    } else {
+      throw new Error("مهمة غير صحيحة");
+    }
 
     return {
       preprocessing,
@@ -146,6 +157,7 @@ export const handleSubmit = async (formData: FormData): Promise<AnalysisResult> 
       task,
     };
   } catch (error) {
+    console.error("Error in handleSubmit:", error);
     throw new Error(error instanceof Error ? error.message : "حدث خطأ في الاتصال بالخادم");
   }
-};
+}

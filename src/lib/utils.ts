@@ -1,6 +1,14 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+/**
+ * Combines multiple class names and merges conflicting Tailwind classes
+ * Uses clsx for conditional classes and tailwind-merge to handle conflicts
+ *
+ * Example:
+ * cn("px-2 py-1", condition && "bg-blue-500", "px-4")
+ * Result: "py-1 bg-blue-500 px-4" (px-4 overrides px-2)
+ */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -98,7 +106,13 @@ export function formatArabicNumber(num: number, decimalPlaces = 2): string {
   });
 }
 
-// Format percentage
+/**
+ * Formats a number as a percentage string with 2 decimal places
+ *
+ * Example:
+ * formatPercentage(85.123) → "85.12%"
+ * formatPercentage(50) → "50.00%"
+ */
 export function formatPercentage(num: number): string {
-  return `${formatArabicNumber(num)}%`;
+  return `${num.toFixed(2)}%`;
 }
