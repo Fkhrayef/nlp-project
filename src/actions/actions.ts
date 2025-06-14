@@ -31,6 +31,10 @@ export type AnalysisResult = {
   preprocessing: PreprocessingResponse;
   results: DualResults;
   task: string;
+  selectedModels: {
+    traditional: string;
+    modern: string;
+  };
 };
 
 // Helper function to call classification endpoint
@@ -122,6 +126,8 @@ export async function handleSubmit(formData: FormData): Promise<AnalysisResult> 
     text: formData.get("text")?.toString() || "",
     task: formData.get("task")?.toString() || "",
     numSentences: formData.get("numSentences")?.toString() || "",
+    traditionalModel: formData.get("traditionalModel")?.toString() || "",
+    modernModel: formData.get("modernModel")?.toString() || "",
   };
 
   const parsed = ServerFormSchema.safeParse(rawData);
@@ -129,24 +135,24 @@ export async function handleSubmit(formData: FormData): Promise<AnalysisResult> 
     throw new Error(parsed.error.issues[0].message);
   }
 
-  const { text, task, numSentences } = parsed.data as ServerFormData;
+  const { text, task, numSentences, traditionalModel, modernModel } = parsed.data as ServerFormData;
 
   try {
     // Step 1: Call preprocessing
     const preprocessing = await callPreprocessingEndpoint(text, task);
 
-    // Step 2: Call task-specific endpoints with different models
+    // Step 2: Call task-specific endpoints with user-selected models
     let traditional, modern;
 
     if (task === "classification") {
-      traditional = await callClassificationEndpoint(text, "traditional_svm");
-      modern = await callClassificationEndpoint(text, "modern_lstm");
+      traditional = await callClassificationEndpoint(text, traditionalModel);
+      modern = await callClassificationEndpoint(text, modernModel);
     } else if (task === "summarization") {
       // Use numSentences (which is already a number from the schema) or default to 3
       const sentenceCount = numSentences || 3;
 
-      traditional = await callSummarizationEndpoint(text, sentenceCount, "traditional_svm");
-      modern = await callSummarizationEndpoint(text, sentenceCount, "modern_lstm");
+      traditional = await callSummarizationEndpoint(text, sentenceCount, traditionalModel);
+      modern = await callSummarizationEndpoint(text, sentenceCount, modernModel);
     } else {
       throw new Error("مهمة غير صحيحة");
     }
@@ -155,6 +161,10 @@ export async function handleSubmit(formData: FormData): Promise<AnalysisResult> 
       preprocessing,
       results: { traditional, modern },
       task,
+      selectedModels: {
+        traditional: traditionalModel,
+        modern: modernModel,
+      },
     };
   } catch (error) {
     console.error("Error in handleSubmit:", error);

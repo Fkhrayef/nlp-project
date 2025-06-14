@@ -9,6 +9,8 @@ export const FormSchema = z.object({
     required_error: "يرجى اختيار نوع المهمة",
   }),
   numSentences: z.string().optional(),
+  traditionalModel: z.string().optional(),
+  modernModel: z.string().min(1, { message: "يرجى اختيار النموذج الحديث" }),
 });
 
 // Server-side form schema with additional validations
@@ -24,6 +26,8 @@ export const ServerFormSchema = z.object({
       message: "عدد الجمل يجب أن يكون بين 1 و 20",
     })
     .transform((val) => (val ? parseInt(val, 10) : undefined)),
+  traditionalModel: z.string(),
+  modernModel: z.string().min(1, { message: "يرجى اختيار النموذج الحديث" }),
 });
 
 // Infer the types from the schemas

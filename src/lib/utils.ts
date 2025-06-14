@@ -116,3 +116,40 @@ export function formatArabicNumber(num: number, decimalPlaces = 2): string {
 export function formatPercentage(num: number): string {
   return `${num.toFixed(2)}%`;
 }
+
+/**
+ * Maps backend model names to user-friendly display labels
+ *
+ * Example:
+ * getModelDisplayName("traditional_svm") → "SVM"
+ * getModelDisplayName("modern_lstm") → "LSTM"
+ */
+export function getModelDisplayName(modelName: string): string {
+  const modelMap: Record<string, string> = {
+    // Classification models
+    traditional_svm: "SVM",
+    modern_lstm: "LSTM",
+    modern_bert: "BERT",
+    // Summarization models
+    traditional_tfidf: "TF-IDF",
+    modern_seq2seq: "Seq2Seq",
+  };
+
+  return modelMap[modelName] || modelName;
+}
+
+/**
+ * Maps model type identifiers to Arabic labels
+ *
+ * Example:
+ * getModelTypeLabel("traditional") → "النموذج التقليدي"
+ * getModelTypeLabel("modern") → "النموذج الحديث"
+ */
+export function getModelTypeLabel(modelType: string): string {
+  const typeMap: Record<string, string> = {
+    traditional: "النموذج التقليدي",
+    modern: "النموذج الحديث",
+  };
+
+  return typeMap[modelType] || modelType;
+}

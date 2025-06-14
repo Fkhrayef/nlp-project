@@ -3,6 +3,7 @@
 import { CheckCircle, RotateCcw, Leaf } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InfoBlock } from "@/components/info-block";
+import { getModelTypeLabel } from "@/lib/utils";
 
 type CompletionHeaderProps = {
   task: string;
@@ -11,10 +12,6 @@ type CompletionHeaderProps = {
 };
 
 export const CompletionHeader = ({ task, originalText, onBack }: CompletionHeaderProps) => {
-  const getModelName = (technique: string) => {
-    return technique === "traditional" ? "النموذج التقليدي" : "النموذج الحديث";
-  };
-
   return (
     <div className="bg-card rounded-2xl shadow-lg p-4 md:p-10 border border-border">
       {/* Header Section - Mobile First */}
@@ -30,7 +27,7 @@ export const CompletionHeader = ({ task, originalText, onBack }: CompletionHeade
             </h3>
             <p className="text-muted-foreground text-base md:text-lg">
               المهمة: {task === "summarization" ? "تلخيص النص" : "تصنيف النص"} • مقارنة{" "}
-              {getModelName("traditional")} مع {getModelName("modern")}
+              {getModelTypeLabel("traditional")} مع {getModelTypeLabel("modern")}
             </p>
           </div>
         </div>

@@ -65,7 +65,11 @@ export const Content = () => {
             <PreprocessingAccordion result={result.preprocessing} />
 
             {/* 3. Results and 4. Performance Comparison */}
-            <ResultPanel result={result.results} task={result.task} />
+            <ResultPanel
+              result={result.results}
+              task={result.task}
+              selectedModels={result.selectedModels}
+            />
           </div>
         )}
       </div>

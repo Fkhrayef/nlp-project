@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { FileText, Brain, Copy } from "lucide-react";
-import { formatPercentage } from "@/lib/utils";
+import { formatPercentage, getModelDisplayName } from "@/lib/utils";
 import { CLASSIFICATION_LABELS } from "@/lib/constants";
 import { ClassificationResponse, SummarizationResponse } from "@/lib/types";
 import { ProbabilityChart } from "@/components/ui/probability-chart";
@@ -13,9 +13,10 @@ type TechniqueCardProps = {
   label: string;
   result: ClassificationResponse | SummarizationResponse;
   task: string;
+  modelName: string;
 };
 
-export const TechniqueCard = ({ label, result, task }: TechniqueCardProps) => {
+export const TechniqueCard = ({ label, result, task, modelName }: TechniqueCardProps) => {
   const [copySuccess, setCopySuccess] = useState(false);
 
   const copyToClipboard = (textToCopy: string) => {
@@ -61,7 +62,7 @@ export const TechniqueCard = ({ label, result, task }: TechniqueCardProps) => {
 
         <div className="text-xs md:text-sm text-gray-600 text-right">
           <p>
-            <strong>النموذج المستخدم:</strong> {data.model_used}
+            <strong>النموذج المستخدم:</strong> {getModelDisplayName(modelName)}
           </p>
         </div>
       </div>
@@ -108,10 +109,7 @@ export const TechniqueCard = ({ label, result, task }: TechniqueCardProps) => {
   };
 
   const getModelName = () => {
-    if ("model_used" in result) {
-      return result.model_used;
-    }
-    return label === "نتائج النموذج الأول" ? "النموذج التقليدي" : "النموذج الحديث";
+    return getModelDisplayName(modelName);
   };
 
   return (
@@ -127,7 +125,7 @@ export const TechniqueCard = ({ label, result, task }: TechniqueCardProps) => {
           </div>
           <div className="text-center md:text-right">
             <h4 className="text-lg md:text-xl font-bold text-foreground">{label}</h4>
-            <p className="text-sm text-muted-foreground mt-1">{getModelName()}</p>
+            <p className="text-sm text-muted-foreground mt-1">نموذج {getModelName()}</p>
           </div>
         </div>
         <button

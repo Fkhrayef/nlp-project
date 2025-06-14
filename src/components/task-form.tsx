@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { ControllerRenderProps } from "react-hook-form";
@@ -41,6 +41,11 @@ const TASK_CARDS = [
     icon: FileText,
     formTitle: "تلخيص النص",
     buttonText: "توليد الملخص",
+    traditionalModel: { value: "traditional_tfidf", label: "TF-IDF" },
+    modernModels: [
+      { value: "modern_seq2seq", label: "Seq2Seq" },
+      { value: "modern_bert", label: "BERT" },
+    ],
   },
   {
     value: "classification",
@@ -49,6 +54,11 @@ const TASK_CARDS = [
     icon: Brain,
     formTitle: "تصنيف النص",
     buttonText: "تصنيف النص",
+    traditionalModel: { value: "traditional_svm", label: "SVM" },
+    modernModels: [
+      { value: "modern_lstm", label: "LSTM" },
+      { value: "modern_bert", label: "BERT" },
+    ],
   },
 ] as const;
 
@@ -61,12 +71,21 @@ export const TaskForm = ({ onResult, onError }: TaskFormProps) => {
       text: "",
       task: undefined,
       numSentences: "3",
+      traditionalModel: "",
+      modernModel: "",
     },
   });
 
   const selectedTask = form.watch("task");
   const selectedTaskConfig = TASK_CARDS.find((task) => task.value === selectedTask);
   const requiresNumSentences = selectedTask === "summarization";
+
+  // Auto-set traditional model when task changes
+  useEffect(() => {
+    if (selectedTaskConfig) {
+      form.setValue("traditionalModel", selectedTaskConfig.traditionalModel.value);
+    }
+  }, [selectedTaskConfig, form]);
 
   const onSubmit = async (values: FormData) => {
     if (!values.task) return;
@@ -80,6 +99,8 @@ export const TaskForm = ({ onResult, onError }: TaskFormProps) => {
       if (values.numSentences) {
         formData.append("numSentences", values.numSentences);
       }
+      formData.append("traditionalModel", values.traditionalModel || "");
+      formData.append("modernModel", values.modernModel);
 
       const result = await handleSubmit(formData);
       onResult(result);
@@ -242,33 +263,66 @@ export const TaskForm = ({ onResult, onError }: TaskFormProps) => {
                 />
 
                 {/* Form Controls Row */}
-                <div
-                  className={`flex flex-col md:flex-row gap-6 md:gap-8 ${
-                    requiresNumSentences ? "md:space-x-8" : ""
-                  }`}
-                >
-                  {/* Model Selection */}
-                  <FormField
-                    control={form.control}
-                    name="task"
-                    render={() => (
-                      <FormItem className="flex-1">
-                        <FormLabel className="text-foreground font-tajawal-medium text-base md:text-lg mb-3 block">
-                          اختيار النموذج
-                        </FormLabel>
-                        <FormControl>
-                          <Select value="lstm_model" disabled>
-                            <SelectTrigger className="bg-background border-2 border-border h-12 md:h-14 text-base md:text-lg px-4 md:px-6 rounded-xl">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="lstm_model">LSTM Model</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
+                <div className="flex flex-col gap-6 md:gap-8">
+                  {/* Model Selection Row */}
+                  <div className="flex flex-col md:flex-row gap-6 md:gap-8">
+                    {/* Traditional Model (disabled) */}
+                    <FormField
+                      control={form.control}
+                      name="traditionalModel"
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormLabel className="text-foreground font-tajawal-medium text-base md:text-lg mb-3 block">
+                            النموذج التقليدي
+                          </FormLabel>
+                          <FormControl>
+                            <Select disabled value={field.value}>
+                              <SelectTrigger className="bg-background border-2 border-border h-12 md:h-14 text-base md:text-lg px-4 md:px-6 rounded-xl">
+                                <SelectValue
+                                  placeholder={selectedTaskConfig?.traditionalModel.label}
+                                />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem
+                                  value={selectedTaskConfig?.traditionalModel.value || ""}
+                                >
+                                  {selectedTaskConfig?.traditionalModel.label}
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Modern Model (user selectable) */}
+                    <FormField
+                      control={form.control}
+                      name="modernModel"
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormLabel className="text-foreground font-tajawal-medium text-base md:text-lg mb-3 block">
+                            النموذج الحديث
+                          </FormLabel>
+                          <FormControl>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <SelectTrigger className="bg-background border-2 border-border h-12 md:h-14 text-base md:text-lg px-4 md:px-6 rounded-xl">
+                                <SelectValue placeholder="اختر النموذج الحديث" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {selectedTaskConfig?.modernModels.map((model) => (
+                                  <SelectItem key={model.value} value={model.value}>
+                                    {model.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
                   {/* Number of Sentences - Only for summarization */}
                   {requiresNumSentences && (
