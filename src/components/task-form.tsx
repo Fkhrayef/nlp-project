@@ -36,7 +36,7 @@ type TaskFormProps = {
 const TASK_CARDS = [
   {
     value: "summarization",
-    title: "تلخص نص",
+    title: "تلخيص نص",
     description: "استخراج النقاط الرئيسية وإنشاء ملخصات موجزة من النص العربي",
     icon: FileText,
     formTitle: "تلخيص النص",
@@ -49,7 +49,7 @@ const TASK_CARDS = [
   },
   {
     value: "classification",
-    title: "تصنف نص",
+    title: "تصنيف نص",
     description: "تصنيف وتحليل النص العربي باستخدام نماذج التعلم الآلي المتقدمة",
     icon: Brain,
     formTitle: "تصنيف النص",
