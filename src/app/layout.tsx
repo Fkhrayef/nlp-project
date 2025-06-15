@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Tajawal } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const tajawal = Tajawal({
@@ -21,6 +22,7 @@ export default function RootLayout({
     <html lang="ar" dir="rtl">
       <body className={`${tajawal.className} text-sm text-foreground bg-background min-h-screen`}>
         {children}
+        <SpeedInsights />
       </body>
     </html>
   );
