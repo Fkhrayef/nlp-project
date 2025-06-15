@@ -7,7 +7,11 @@ import { ResultPanel } from "@/components/result-panel";
 import ContentBlock from "@/components/content-block";
 import type { AnalysisResult } from "@/actions/actions";
 
-export const Content = () => {
+interface ContentProps {
+  onReset?: () => void;
+}
+
+export const Content = ({ onReset }: ContentProps) => {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string>("");
   const [showResults, setShowResults] = useState(false);
@@ -36,6 +40,7 @@ export const Content = () => {
     setResult(null);
     setError("");
     setOriginalText("");
+    onReset?.(); // Call external reset handler if provided
   };
 
   return (

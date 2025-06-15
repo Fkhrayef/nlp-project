@@ -183,7 +183,7 @@ export const PreprocessingAccordion = ({ result }: PreprocessingAccordionProps) 
                 <div className="w-0.5 h-4 md:h-6 bg-primary"></div>
               </div>
               <InfoBlock
-                title="جذع الكلمات"
+                title="جذر الكلمات"
                 icon={
                   <div className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-primary flex items-center justify-center text-xs md:text-sm font-bold text-white">
                     {availableSteps.length +
