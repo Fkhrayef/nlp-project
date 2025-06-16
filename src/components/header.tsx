@@ -1,53 +1,27 @@
+"use client";
+
 import { Feather, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 
-interface HeaderProps {
-  onReset?: () => void;
-}
+export const Header = () => {
+  const { setTheme } = useTheme();
 
-export const Header = ({ onReset }: HeaderProps) => {
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    // On mount, check localStorage or system preference
-    const saved = localStorage.getItem("theme");
-    if (saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-      document.documentElement.classList.add("dark");
-      setIsDark(true);
-    } else {
-      document.documentElement.classList.remove("dark");
-      setIsDark(false);
-    }
-  }, []);
-
-  const toggleDark = () => {
-    if (isDark) {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-      setIsDark(false);
-    } else {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-      setIsDark(true);
-    }
+  const handleToggleTheme = () => {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   };
 
   const handleReset = () => {
-    onReset?.();
+    window.location.reload();
   };
 
   return (
     <div className="relative text-center space-y-4 py-8">
       {/* Dark mode toggle */}
       <div className="absolute left-4 top-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={isDark ? "تفعيل الوضع الفاتح" : "تفعيل الوضع الداكن"}
-          onClick={toggleDark}
-        >
-          {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        <Button variant="ghost" size="icon" aria-label="تبديل الوضع" onClick={handleToggleTheme}>
+          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+          <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
         </Button>
       </div>
 

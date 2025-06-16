@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { TaskForm } from "@/components/task-form";
@@ -7,11 +9,7 @@ import { ResultPanel } from "@/components/result-panel";
 import ContentBlock from "@/components/content-block";
 import type { AnalysisResult } from "@/actions/actions";
 
-interface ContentProps {
-  onReset?: () => void;
-}
-
-export const Content = ({ onReset }: ContentProps) => {
+export const Content = () => {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string>("");
   const [showResults, setShowResults] = useState(false);
@@ -35,12 +33,11 @@ export const Content = ({ onReset }: ContentProps) => {
     setShowResults(false);
   };
 
-  const handleBackToForm = () => {
+  const handleReset = () => {
     setShowResults(false);
     setResult(null);
     setError("");
     setOriginalText("");
-    onReset?.(); // Call external reset handler if provided
   };
 
   return (
@@ -60,11 +57,7 @@ export const Content = ({ onReset }: ContentProps) => {
         {showResults && result && (
           <div className="space-y-6 md:space-y-8">
             {/* 1. Completion Header with Original Text */}
-            <CompletionHeader
-              task={result.task}
-              originalText={originalText}
-              onBack={handleBackToForm}
-            />
+            <CompletionHeader task={result.task} originalText={originalText} onBack={handleReset} />
 
             {/* 2. Preprocessing Steps */}
             <PreprocessingAccordion result={result.preprocessing} />
