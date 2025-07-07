@@ -7,6 +7,7 @@ import { CompletionHeader } from "@/components/completion-header";
 import { PreprocessingAccordion } from "@/components/preprocessing-accordion";
 import { ResultPanel } from "@/components/result-panel";
 import ContentBlock from "@/components/content-block";
+import NotebookOverview from "@/components/notebook-overview";
 import type { AnalysisResult } from "@/actions/actions";
 
 export const Content = () => {
@@ -51,7 +52,12 @@ export const Content = () => {
         )}
 
         {/* Step 1: Form */}
-        {!showResults && <TaskForm onResult={handleResult} onError={handleError} />}
+        {!showResults && (
+          <>
+            <TaskForm onResult={handleResult} onError={handleError} />
+            <NotebookOverview />
+          </>
+        )}
 
         {/* Step 2: Results */}
         {showResults && result && (
